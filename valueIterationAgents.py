@@ -43,7 +43,7 @@ class ValueIterationAgent(ValueEstimationAgent):
         self.iterations = iterations
         self.values = util.Counter() # A Counter is a dict with default 0
         # Write value iteration code here
-        utilityPrime = {}
+        utilityPrime = util.Counter()
         states = mdp.getStates()
         for i in range(len(states)):
             state = states[i]
@@ -55,20 +55,21 @@ class ValueIterationAgent(ValueEstimationAgent):
             #looping through states
             for state in states:
                 actions = mdp.getPossibleActions(state)
-                maxProbUtil = 0
+                maxProbUtil = -99999
                 maxAction = None
                 maxNextState = None
                 for action in actions:
-                    nextState, prob = mdp.getTransitionStatesAndProbs(state, action)
-                    probUtil = prob*self.values[nextState]
+                    results = mdp.getTransitionStatesAndProbs(state, action)
+                    probUtil = sum(prob*self.values[nextState] for nextState, prob in results)
                     if probUtil>maxProbUtil:
                         maxProbUtil = probUtil
                         maxAction = action
-                        maxNextState = nextState
-                utilityPrime[state] = mdp.getReward(state, maxAction, maxNextState) + discount*maxProbUtil
+                #why does reward depend on next state
+                utilityPrime[state] = mdp.getReward(state, maxAction, None) + discount*maxProbUtil
                 if abs(utilityPrime[state]-self.values[state])>delta:
                     delta = abs(utilityPrime[state]-self.values[state])
-
+                count = count + 1
+                #print self.values
     def getValue(self, state):
         """
           Return the value of the state (computed in __init__).
@@ -81,7 +82,8 @@ class ValueIterationAgent(ValueEstimationAgent):
           Compute the Q-value of action in state from the
           value function stored in self.values.
         """
-
+        results = self.mdp.getTransitionStatesAndProbs(state,action)
+        return sum(prob*(self.mdp.getReward(state, action, nextState) + self.discount*self.values[nextState]) for nextState, prob in results)
 
     def computeActionFromValues(self, state):
         """
