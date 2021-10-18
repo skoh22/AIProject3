@@ -50,11 +50,15 @@ class ValueIterationAgent(ValueEstimationAgent):
             utilityPrime[state]=0
         count = 0
         while count < iterations: #or delta < 1.0 * epsilon * (1 - discount) / discount or
+            print 'COUNT', count
             self.values = utilityPrime
             delta = 0
             #looping through states
-            for state in states:
+            for state in states[1:]:  # states[0] is terminal, throws off values bc no actions -> gets assigned -99999
+                print
+                print 'STATE:', state
                 actions = mdp.getPossibleActions(state)
+                print 'ACTIONS:', actions
                 maxProbUtil = -99999
                 maxAction = None
                 maxNextState = None
@@ -64,11 +68,12 @@ class ValueIterationAgent(ValueEstimationAgent):
                     if probUtil>maxProbUtil:
                         maxProbUtil = probUtil
                         maxAction = action
+                print 'MAX UTIL:', maxProbUtil
                 #why does reward depend on next state
                 utilityPrime[state] = mdp.getReward(state, maxAction, None) + discount*maxProbUtil
                 if abs(utilityPrime[state]-self.values[state])>delta:
                     delta = abs(utilityPrime[state]-self.values[state])
-                count = count + 1
+            count = count + 1  # was indented one step too far -> iterating 12x less than should have been
                 #print self.values
     def getValue(self, state):
         """
