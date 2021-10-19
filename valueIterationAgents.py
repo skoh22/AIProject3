@@ -13,7 +13,7 @@
 
 
 import mdp, util
-
+import random
 from learningAgents import ValueEstimationAgent
 
 class ValueIterationAgent(ValueEstimationAgent):
@@ -45,31 +45,37 @@ class ValueIterationAgent(ValueEstimationAgent):
         # Write value iteration code here
         utilityPrime = util.Counter()
         states = mdp.getStates()
-        for i in range(len(states)):
-            state = states[i]
-            utilityPrime[state]=0
         count = 0
-        while count < iterations: #or delta < 1.0 * epsilon * (1 - discount) / discount or
-            self.values = utilityPrime
-            delta = 0
-            #looping through states
-            for state in states:
-                actions = mdp.getPossibleActions(state)
-                maxProbUtil = -99999
-                maxAction = None
-                maxNextState = None
-                for action in actions:
-                    results = mdp.getTransitionStatesAndProbs(state, action)
-                    probUtil = sum(prob*self.values[nextState] for nextState, prob in results)
-                    if probUtil>maxProbUtil:
-                        maxProbUtil = probUtil
-                        maxAction = action
-                #why does reward depend on next state
-                utilityPrime[state] = mdp.getReward(state, maxAction, None) + discount*maxProbUtil
-                if abs(utilityPrime[state]-self.values[state])>delta:
-                    delta = abs(utilityPrime[state]-self.values[state])
-                count = count + 1
-                #print self.values
+        while count < iterations:  # or delta < 1.0 * epsilon * (1 - discount) / discount or
+            self.values = utilityPrime.copy()
+            #print 'COUNT', count
+            #delta = 0
+            # looping through states
+            for i in range(len(states)):  # states[0] is terminal, throws off values bc no actions -> gets assigned -99999
+                state = states[i]
+                if i is 0:
+                    maxProbUtil = 0
+                    #maxAction = None
+                else:
+                    #print 'STATE:', state
+                    actions = mdp.getPossibleActions(state)
+                    #print 'ACTIONS:', actions
+                    maxProbUtil = -99999
+                    #maxAction = None
+                    for action in actions:
+                        results = mdp.getTransitionStatesAndProbs(state, action)
+                        probUtil = sum(prob * self.values[nextState] for nextState, prob in results)
+                        if probUtil > maxProbUtil:
+                            maxProbUtil = probUtil
+                            #maxAction = action
+                    #print 'MAX UTIL:', maxProbUtil
+                    # why does reward depend on next state
+                utilityPrime[state] = mdp.getReward(state, None, None) + discount * maxProbUtil
+                #if abs(utilityPrime[state] - self.values[state]) > delta:
+                    #delta = abs(utilityPrime[state] - self.values[state])
+            count = count + 1  # was indented one step too far -> iterating 12x less than should have been
+        self.values = utilityPrime.copy()
+            # print self.values
     def getValue(self, state):
         """
           Return the value of the state (computed in __init__).
@@ -98,14 +104,18 @@ class ValueIterationAgent(ValueEstimationAgent):
         if not actions:
             return None
         else:
-            bestAction = None
             maxVal = -999999
+            bestActionList = []
             for action in actions:
-                val = self.getValue(state)
+                val = self.getQValue(state,action)
                 if val>maxVal:
                     #ties broken by first action listed in getpossibleactions
-                    bestAction = action
-            return bestAction
+                    bestActionList = [action]
+                    maxVal = val
+                elif val == maxVal:
+                    bestActionList.append(action)
+            #print "bestActionList: ", bestActionList
+            return random.choice(bestActionList)
 
     def getPolicy(self, state):
         return self.computeActionFromValues(state)
