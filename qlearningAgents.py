@@ -50,7 +50,7 @@ class QLearningAgent(ReinforcementAgent):
           Should return 0.0 if we have never seen a state
           or the Q node value otherwise
         """
-        if state not in self.qValues.keys():
+        if str(state) not in self.qValues.keys():
             self.qValues[str(state)] = util.Counter()  # counter for Q-values of each action
             return 0.0
         else:
@@ -122,15 +122,8 @@ class QLearningAgent(ReinforcementAgent):
           it will be called on your behalf
         """
         change = reward + (self.discount * self.computeValueFromQValues(nextState)) - self.getQValue(state, action)
-        print 'OLD:', self.getQValue(state, action)
         step = self.alpha * change
-        print 'STEP:', step
         self.qValues[str(state)][action] += step
-        # self.qValues[str(state)].incrementAll([action], step)
-        print 'NEW:', self.getQValue(state, action)
-        print type(self.qValues[str(state)])
-        print
-
 
     def getPolicy(self, state):
         return self.computeActionFromQValues(state)
