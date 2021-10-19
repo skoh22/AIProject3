@@ -13,7 +13,7 @@
 
 
 import mdp, util
-
+import random
 from learningAgents import ValueEstimationAgent
 
 class ValueIterationAgent(ValueEstimationAgent):
@@ -42,11 +42,40 @@ class ValueIterationAgent(ValueEstimationAgent):
         self.discount = discount
         self.iterations = iterations
         self.values = util.Counter() # A Counter is a dict with default 0
-
         # Write value iteration code here
-        "*** YOUR CODE HERE ***"
-
-
+        utilityPrime = util.Counter()
+        states = mdp.getStates()
+        count = 0
+        while count < iterations:  # or delta < 1.0 * epsilon * (1 - discount) / discount or
+            self.values = utilityPrime.copy()
+            #print 'COUNT', count
+            #delta = 0
+            # looping through states
+            for i in range(len(states)):  # states[0] is terminal, throws off values bc no actions -> gets assigned -99999
+                state = states[i]
+                if i is 0:
+                    maxProbUtil = 0
+                    #maxAction = None
+                else:
+                    #print 'STATE:', state
+                    actions = mdp.getPossibleActions(state)
+                    #print 'ACTIONS:', actions
+                    maxProbUtil = -99999
+                    #maxAction = None
+                    for action in actions:
+                        results = mdp.getTransitionStatesAndProbs(state, action)
+                        probUtil = sum(prob * self.values[nextState] for nextState, prob in results)
+                        if probUtil > maxProbUtil:
+                            maxProbUtil = probUtil
+                            #maxAction = action
+                    #print 'MAX UTIL:', maxProbUtil
+                    # why does reward depend on next state
+                utilityPrime[state] = mdp.getReward(state, None, None) + discount * maxProbUtil
+                #if abs(utilityPrime[state] - self.values[state]) > delta:
+                    #delta = abs(utilityPrime[state] - self.values[state])
+            count = count + 1  # was indented one step too far -> iterating 12x less than should have been
+        self.values = utilityPrime.copy()
+            # print self.values
     def getValue(self, state):
         """
           Return the value of the state (computed in __init__).
@@ -59,8 +88,8 @@ class ValueIterationAgent(ValueEstimationAgent):
           Compute the Q-value of action in state from the
           value function stored in self.values.
         """
-        "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        results = self.mdp.getTransitionStatesAndProbs(state,action)
+        return sum(prob*(self.mdp.getReward(state, action, nextState) + self.discount*self.values[nextState]) for nextState, prob in results)
 
     def computeActionFromValues(self, state):
         """
@@ -71,8 +100,22 @@ class ValueIterationAgent(ValueEstimationAgent):
           there are no legal actions, which is the case at the
           terminal state, you should return None.
         """
-        "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        actions = self.mdp.getPossibleActions(state)
+        if not actions:
+            return None
+        else:
+            maxVal = -999999
+            bestActionList = []
+            for action in actions:
+                val = self.getQValue(state,action)
+                if val>maxVal:
+                    #ties broken by first action listed in getpossibleactions
+                    bestActionList = [action]
+                    maxVal = val
+                elif val == maxVal:
+                    bestActionList.append(action)
+            #print "bestActionList: ", bestActionList
+            return random.choice(bestActionList)
 
     def getPolicy(self, state):
         return self.computeActionFromValues(state)
